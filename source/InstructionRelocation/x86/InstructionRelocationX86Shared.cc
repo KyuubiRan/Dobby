@@ -151,8 +151,15 @@ int GenRelocateSingleX86Insn(addr_t curr_orig_ip, addr_t curr_relo_ip, uint8_t *
 #if defined(TARGET_ARCH_IA32)
     x86_insn_encode_begin();
 
-    __ EmitBuffer(buffer_cursor, insn.immediate_offset);
-    emit_rel32_label(code_buffer, x86_insn_encode_start, curr_relo_ip, orig_dst_ip);
+    // shatyuka: fix call $+5 pop
+    if (offset == 0) {
+      __ Emit8(0xB8); // mov eax
+      __ Emit32(orig_dst_ip); // imm
+      __ Emit8(0x50); // push eax
+    } else {
+        __ EmitBuffer(buffer_cursor, insn.immediate_offset);
+        emit_rel32_label(code_buffer, x86_insn_encode_start, curr_relo_ip, orig_dst_ip);
+    }
 #else
     __ Emit8(0xFF);
     if (insn.primary_opcode == 0xE8) {
